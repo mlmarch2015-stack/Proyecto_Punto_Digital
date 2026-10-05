@@ -1,0 +1,69 @@
+;;;;;;;Etiquetas de fila;Recuento de id_asistencia
+;Etiquetas de fila;Recuento de id_asistencia;;;;;01;419
+;Alfabetización Digital;513;;;;;02;424
+;Canva;516;;;;;03;431
+;Ciudadanía Digital;504;;;;;04;427
+;Excel;518;;;;;05;413
+;Impresión 3D;466;;;;;06;429
+;Marketing Digital;506;;;;;07;412
+;PowerPoint;504;;;;;08;409
+;Python;484;;;;;09;425
+;Robótica;490;;;;;10;425
+;Word;499;;;;;11;399
+;Total general;5000;;;;;12;387
+;;;;;;;Total general;5000
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+Recuento de id_equipo;Etiquetas de columna;;;;;;Etiquetas de fila;Recuento de id_personal
+Etiquetas de fila;Bueno;Regular;Total general;;;;Administrativo;1
+Impresora;56;74;130;;;;Capacitador;1
+Notebook;57;68;125;;;;Coordinador;1
+PC;39;27;66;;;;Soporte Técnico;1
+Proyector;39;105;144;;;;Total general;4
+Total general;191;274;465;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;
+;Etiquetas de fila;Recuento de id_usuario;;;;;;
+;Añatuya;73;;;;;;
+;Bandera;73;;;;;;
+;Los Telares;65;;;;;;
+;Pinto;66;;;;;;
+;Sol de Julio;70;;;;;;
+;Sumampa;73;;;;;;
+;Villa Ojo de Agua;80;;;;;;
+;Total general;500;;;;;;
