@@ -59,26 +59,21 @@ with col_p1:
     mes_nombre = st.selectbox("Mes del año:", list(meses_dict.keys()))
     mes_val = meses_dict[mes_nombre]
     
-    dias_semana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     dias_nombres = {'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'}
-    dia_sel = st.selectbox("Día de la semana:", list(dias_nombres.values()), format_func=lambda x: x)
-    # encontrar key original
+    dia_sel = st.selectbox("Día de la semana:", list(dias_nombres.values()))
     dia_val = [k for k, v in dias_nombres.items() if v == dia_sel][0]
 
 with col_p2:
     actividades_disponibles = sorted(df['nombre_actividad'].dropna().unique().tolist())
     actividad_sel = st.selectbox("Nombre de la Actividad / Taller:", actividades_disponibles)
     
-    # Categoría dinámica basada en el CSV
     cat_disponibles_pred = sorted(df['categoria'].dropna().unique().tolist())
     categoria_pred = st.selectbox("Categoría:", cat_disponibles_pred)
 
 if st.button("📊 Calcular Asistencia Estimada"):
-    # Modelo heurístico / predictivo basado en datos históricos reales del CSV
     subset = df[(df['nombre_actividad'] == actividad_sel) & (df['categoria'] == categoria_pred)]
     if len(subset) > 0:
         base_pred = len(subset) / max(subset['mes'].nunique(), 1)
-        # Ajuste leve por mes y día
         prediccion = int(np.clip(base_pred * np.random.uniform(0.9, 1.1), 5, 50))
     else:
         prediccion = int(np.random.randint(15, 35))
@@ -87,18 +82,39 @@ if st.button("📊 Calcular Asistencia Estimada"):
 
 st.markdown("---")
 
-# Sección: Análisis Gráfico
-st.header("📊 Análisis Gráfico: Demanda Histórica")
-st.markdown("Visualización de la distribución histórica de asistencias según los datos registrados.")
+# Sección: Análisis Gráfico (Demanda y Evolución)
+st.header("📊 Análisis Gráfico y Estadístico")
 
-if len(df_filtrado) > 0:
-    fig, ax = plt.subplots(figsize=(10, 5))
-    conteo_actividades = df_filtrado['nombre_actividad'].value_counts().head(10)
-    sns.barplot(x=conteo_actividades.values, y=conteo_actividades.index, ax=ax, palette="viridis")
-    ax.set_title("Top Actividades con Mayor Demanda")
-    ax.set_xlabel("Cantidad de Registros / Asistencias")
-    ax.set_ylabel("Actividad")
-    st.pyplot(fig)
-else:
-    st.warning("No hay datos suficientes para mostrar en el gráfico con los filtros seleccionados.")
-    
+col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    st.subheader("Top Actividades con Mayor Demanda")
+    if len(df_filtrado) > 0:
+        fig, ax = plt.subplots(figsize=(8, 4))
+        conteo_actividades = df_filtrado['nombre_actividad'].value_counts().head(8)
+        sns.barplot(x=conteo_actividades.values, y=conteo_actividades.index, ax=ax, palette="viridis")
+        ax.set_xlabel("Asistencias")
+        ax.set_ylabel("Actividad")
+        st.pyplot(fig)
+    else:
+        st.warning("Sin datos.")
+
+with col_g2:
+    st.subheader("Evolución de Asistencia por Mes")
+    if len(df_filtrado) > 0 and 'mes' in df_filtrado.columns:
+        fig2, ax2 = plt.subplots(figsize=(8, 4))
+        conteo_meses = df_filtrado['mes'].value_counts().sort_index()
+        ax2.plot(conteo_meses.index, conteo_meses.values, marker='o', color='b', linestyle='-', linewidth=2)
+        ax2.set_xlabel("Mes (Número)")
+        ax2.set_ylabel("Total Asistencias")
+        ax2.grid(True, linestyle='--', alpha=0.6)
+        st.pyplot(fig2)
+    else:
+        st.warning("Sin datos temporales.")
+
+st.markdown("---")
+
+# Sección: Tabla de Datos Interactiva
+st.header("📋 Explorador de Datos Registrados")
+st.markdown("Visualiza en detalle los registros filtrados actualmente:")
+st.dataframe(df_filtrado, use_container_width=True)
