@@ -6,16 +6,15 @@ import seaborn as sns
 
 st.set_page_config(page_title="Punto Digital - Villa Ojo de Agua", layout="wide")
 
-# Título principal del proyecto
 st.title("💻 Panel de Gestión y Predicción - Punto Digital - Villa Ojo de Agua")
 st.markdown("---")
 
-# Cargar datos de manera segura
+# Cargar datos
 @st.cache_data
 def cargar_datos():
     try:
         df = pd.read_csv("datos.csv", encoding="utf-8")
-    except UnicodeDecodeError:
+    except:
         df = pd.read_csv("datos.csv", encoding="latin1")
     return df
 
@@ -25,24 +24,12 @@ except Exception as e:
     st.error(f"Error al cargar los datos: {e}")
     st.stop()
 
-# Limpiar espacios en los nombres de las columnas
+# Limpiar nombres de columnas
 df.columns = df.columns.str.strip()
 
-# Crear nombre completo de forma segura según las columnas disponibles
-if 'nombre' in df.columns and 'apellido' in df.columns:
-    df['Alumno'] = df['nombre'].astype(str) + " " + df['apellido'].astype(str)
-elif 'nombre' in df.columns:
-    df['Alumno'] = df['nombre'].astype(str)
-elif 'id_usuario' in df.columns:
-    df['Alumno'] = "Usuario " + df['id_usuario'].astype(str)
-else:
-    df['Alumno'] = "Estudiante"
+# Sidebar con filtros originales
+st.sidebar.header("🔍 Filtros y Parámetros")
 
-# Barra lateral con el título pedido
-st.sidebar.header("📁 Proyecto Punto Digital")
-st.sidebar.markdown("### Filtros y Parámetros")
-
-# 1. Filtro por Categoría
 if 'categoria' in df.columns:
     categorias_disponibles = sorted(df['categoria'].dropna().unique().tolist())
     categoria_sel = st.sidebar.selectbox("Filtrar por Categoría:", ["Todas"] + categorias_disponibles)
@@ -53,13 +40,6 @@ if 'categoria' in df.columns:
 else:
     df_filtrado = df
 
-# 2. Cuadro de búsqueda individual por alumno
-alumnos_disponibles = sorted(df_filtrado['Alumno'].dropna().unique().tolist())
-alumno_sel = st.sidebar.selectbox("🔍 Buscar Alumno Individual:", ["Todos"] + alumnos_disponibles)
-
-if alumno_sel != "Todos":
-    df_filtrado = df_filtrado[df_filtrado['Alumno'] == alumno_sel]
-
 # Métricas principales
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -68,7 +48,7 @@ with col2:
     col_act = 'nombre_actividad' if 'nombre_actividad' in df.columns else ('actividad' if 'actividad' in df.columns else None)
     st.metric("Actividades Únicas", df_filtrado[col_act].nunique() if col_act and col_act in df_filtrado.columns else 0)
 with col3:
-    st.metric("Usuarios Únicos", df_filtrado['id_usuario'].nunique() if 'id_usuario' in df.columns else 0)
+    st.metric("Usuarios Únicos", df_filtrado['id_usuario'].nunique() if 'id_usuario' in df_filtrado.columns else 0)
 
 st.markdown("---")
 
@@ -142,5 +122,5 @@ st.markdown("---")
 
 # Explorador de Datos Registrados
 st.header("📋 Explorador de Datos Registrados")
-st.markdown("Visualiza en detalle los registros filtrados (con nombres y apellidos de los estudiantes):")
+st.markdown("Visualiza en detalle los registros filtrados:")
 st.dataframe(df_filtrado, use_container_width=True)
