@@ -8,7 +8,7 @@ import os
 
 st.set_page_config(page_title="Punto Digital - Dashboard y Predicción", layout="wide")
 
-# ================= ENCABEZADO CON LOGO Y TÍTULO =================
+# ================= ENCABEZADO CON EL LOGO REDONDO Y TÍTULO =================
 col_logo, col_titulo = st.columns([1, 6])
 
 with col_logo:
@@ -66,12 +66,13 @@ categorias_base = [
 cat_csv = sorted(df['categoria'].dropna().unique().tolist()) if 'categoria' in df.columns else []
 lista_categorias = sorted(list(set(categorias_base + cat_csv)))
 
+# ================= SIDEBAR CON LA IMAGEN GRANDE =================
 st.sidebar.header("📁 Proyecto Punto Digital")
 
-if os.path.exists("punto_digital_logo.jpg"):
-    st.sidebar.image("punto_digital_logo.jpg", use_container_width=True)
-elif os.path.exists("PuntoDigital.jpg"):
+if os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
+elif os.path.exists("punto_digital.webp"):
+    st.sidebar.image("punto_digital.webp", use_container_width=True)
 
 st.sidebar.markdown("---")
 st.sidebar.header("🔍 Filtros y Parámetros")
@@ -194,4 +195,4 @@ st.markdown("---")
 
 st.header("📋 Explorador de Datos Registrados")
 st.markdown("Visualiza en detalle los registros filtrados actualmente:")
-st.dataframe(df_filtrado, use_container_width=True) 
+st.dataframe(df_filtrado, use_container_width=True)
