@@ -4,30 +4,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-st.set_page_config(page_title="Punto Digital - Dashboard y Predicción", layout="wide")
+st.set_page_config(page_title="Punto Digital - Villa Ojo de Agua", layout="wide")
 
-st.title("💻 Panel de Gestión y Predicción - Punto Digital")
+# Cabecera principal con título personalizado
+st.title("💻 Panel de Gestión y Predicción - Punto Digital - Villa Ojo de Agua")
 st.markdown("---")
 
-# Cargar datos y unir nombres de usuarios automáticamente
+# Cargar datos de forma segura (evita errores de codificación)
 @st.cache_data
 def cargar_datos():
-    # Leemos las asistencias y los usuarios desde el archivo Excel profesional
     try:
-        excel_path = "Dashboard_PuntoDigital_BaseProfesional-1.xlsx"
-        df_asistencias = pd.read_excel(excel_path, sheet_name="Asistencias")
-        df_usuarios = pd.read_excel(excel_path, sheet_name="Usuarios")
-        
-        # Hacemos el cruce (merge) por id_usuario para traer nombre y apellido
-        df = pd.merge(df_asistencias, df_usuarios[['id_usuario', 'nombre', 'apellido']], on="id_usuario", how="left")
-    except Exception as e:
-        # Plan B por si lee el CSV local
-        df = pd.read_csv("datos.csv")
-        if 'nombre' not in df.columns or 'apellido' not in df.columns:
-            # Si no los tiene, simulamos nombres para que no dé error
-            df['nombre'] = "Estudiante"
-            df['apellido'] = "Ejemplo"
-            
+        # Intentar leer con codificación estándar
+        df = pd.read_csv("datos.csv", encoding="utf-8")
+    except UnicodeDecodeError:
+        try:
+            # Intentar con codificación latina si hay tildes o eñes
+            df = pd.read_csv("datos.csv", encoding="latin1")
+        except:
+            # Respaldo leyendo directo del Excel profesional si estuviera disponible
+            excel_path = "Dashboard_PuntoDigital_BaseProfesional-1.xlsx"
+            df_asist = pd.read_excel(excel_path, sheet_name="Asistencias")
+            df_usrs = pd.read_excel(excel_path, sheet_name="Usuarios")
+            df = pd.merge(df_asist, df_usrs[['id_usuario', 'nombre', 'apellido']], on="id_usuario", how="left")
     return df
 
 try:
@@ -36,14 +34,19 @@ except Exception as e:
     st.error(f"Error al cargar los datos: {e}")
     st.stop()
 
-# Crear columna combinada de Nombre y Apellido para mostrar y buscar
+# Crear columna combinada de Nombre y Apellido y reorganizar columnas
 if 'nombre' in df.columns and 'apellido' in df.columns:
     df['Alumno (Nombre y Apellido)'] = df['nombre'].astype(str) + " " + df['apellido'].astype(str)
+    cols = ['id_asistencia', 'id_usuario', 'nombre', 'apellido', 'Alumno (Nombre y Apellido)', 'fecha', 'estado', 'actividad', 'categoria', 'cupo', 'localidad', 'dia_semana', 'mes']
+    existing_cols = [c for c in cols if c in df.columns]
+    other_cols = [c for c in df.columns if c not in existing_cols]
+    df = df[existing_cols + other_cols]
 else:
     df['Alumno (Nombre y Apellido)'] = "Usuario " + df['id_usuario'].astype(str)
 
-# Sidebar de navegación / filtros
-st.sidebar.header("🔍 Filtros y Parámetros")
+# Sidebar de navegación / filtros con el título solicitado
+st.sidebar.header("📁 Proyecto Punto Digital")
+st.sidebar.markdown("### Filtros y Parámetros")
 
 # 1. Filtro por Categoría
 categorias_disponibles = sorted(df['categoria'].dropna().unique().tolist()) if 'categoria' in df.columns else []
@@ -54,7 +57,7 @@ if categoria_sel != "Todas":
 else:
     df_filtrado = df
 
-# 2. Cuadro de búsqueda individual por Alumno
+# 2. Búsqueda individual por Alumno
 alumnos_disponibles = sorted(df_filtrado['Alumno (Nombre y Apellido)'].dropna().unique().tolist())
 alumno_sel = st.sidebar.selectbox("🔍 Buscar Alumno Individual:", ["Todos"] + alumnos_disponibles)
 
@@ -143,7 +146,7 @@ with col_g2:
 
 st.markdown("---")
 
-# Sección: Explorador de Datos Registrados (Con nombres y apellidos visibles)
+# Sección: Explorador de Datos Registrados
 st.header("📋 Explorador de Datos Registrados")
-st.markdown("Visualiza en detalle los registros filtrados (con nombres y apellidos reales de los alumnos):")
+st.markdown("Visualiza en detalle los registros filtrados (con nombres y apellidos reales de cada estudiante):")
 st.dataframe(df_filtrado, use_container_width=True) 
