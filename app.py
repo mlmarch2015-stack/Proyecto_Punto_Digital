@@ -8,7 +8,19 @@ import os
 
 st.set_page_config(page_title="Punto Digital - Dashboard y Predicción", layout="wide")
 
-st.title("💻 Panel de Gestión y Predicción - Punto Digital Villa Ojo de Agua")
+# ================= ENCABEZADO CON LOGO Y TÍTULO =================
+col_logo, col_titulo = st.columns([1, 6])
+
+with col_logo:
+    if os.path.exists("punto_digital_logo.jpg"):
+        st.image("punto_digital_logo.jpg", use_container_width=True)
+    elif os.path.exists("punto_digital_logo.png"):
+        st.image("punto_digital_logo.png", use_container_width=True)
+
+with col_titulo:
+    st.markdown("## 💻 Panel de Gestión y Predicción")
+    st.markdown("### Punto Digital Villa Ojo de Agua")
+
 st.markdown("---")
 
 @st.cache_data
@@ -56,10 +68,10 @@ lista_categorias = sorted(list(set(categorias_base + cat_csv)))
 
 st.sidebar.header("📁 Proyecto Punto Digital")
 
-if os.path.exists("PuntoDigital.jpg"):
+if os.path.exists("punto_digital_logo.jpg"):
+    st.sidebar.image("punto_digital_logo.jpg", use_container_width=True)
+elif os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
-elif os.path.exists("punto_digital.webp"):
-    st.sidebar.image("punto_digital.webp", use_container_width=True)
 
 st.sidebar.markdown("---")
 st.sidebar.header("🔍 Filtros y Parámetros")
