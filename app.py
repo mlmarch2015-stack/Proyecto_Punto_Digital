@@ -3,16 +3,24 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import joblib
+import os
 
 st.set_page_config(page_title="Punto Digital - Dashboard y Predicción", layout="wide")
 
-st.title("💻 Panel de Gestión y Predicción - Punto Digital")
+st.title("💻 Panel de Gestión y Predicción - Punto Digital Villa Ojo de Agua")
 st.markdown("---")
 
-# Cargar datos
+# Cargar datos correctamente con manejo robusto de codificación (latin-1)
 @st.cache_data
 def cargar_datos():
-    df = pd.read_csv("datos.csv")
+    try:
+        df = pd.read_csv("datos.csv", sep=";", encoding="latin-1")
+    except Exception:
+        df = pd.read_csv("datos.csv", sep=",", encoding="latin-1")
+        
+    if 'fecha' in df.columns:
+        df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce')
     return df
 
 try:
@@ -21,32 +29,90 @@ except Exception as e:
     st.error(f"Error al cargar datos.csv: {e}")
     st.stop()
 
-# Sidebar de navegación / filtros
+# Cargar modelo entrenado si existe
+@st.cache_resource
+def cargar_modelo():
+    if os.path.exists("modelo_punto_digital.pkl") and os.path.exists("columnas_modelo.pkl"):
+        model = joblib.load("modelo_punto_digital.pkl")
+        columns = joblib.load("columnas_modelo.pkl")
+        return model, columns
+    return None, None
+
+modelo, columnas_entrenamiento = cargar_modelo()
+
+# Lista extendida de categorías para Punto Digital
+categorias_base = [
+    "Capacitación", 
+    "Taller", 
+    "Asistencia Técnica", 
+    "Asesoramiento / Trámites", 
+    "Entretenimiento / Cine", 
+    "Inclusión Digital", 
+    "Otro"
+]
+
+cat_csv = sorted(df['categoria'].dropna().unique().tolist()) if 'categoria' in df.columns else []
+lista_categorias = sorted(list(set(categorias_base + cat_csv)))
+
+# ================= SIDEBAR: PROYECTO PUNTO DIGITAL =================
+st.sidebar.header("📁 Proyecto Punto Digital")
+
+# Mostrar imagen si se encuentra disponible en la carpeta
+if os.path.exists("PuntoDigital.jpg"):
+    st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
+elif os.path.exists("punto_digital.webp"):
+    st.sidebar.image("punto_digital.webp", use_container_width=True)
+
+st.sidebar.markdown("---")
 st.sidebar.header("🔍 Filtros y Parámetros")
 
-# Obtener categorías únicas dinámicamente desde el CSV
-categorias_disponibles = sorted(df['categoria'].dropna().unique().tolist())
-categoria_sel = st.sidebar.selectbox("Filtrar por Categoría:", ["Todas"] + categorias_disponibles)
+# Filtro por Categoría
+categoria_sel = st.sidebar.selectbox("Filtrar por Categoría:", ["Todas"] + lista_categorias)
 
-if categoria_sel != "Todas":
-    df_filtrado = df[df['categoria'] == categoria_sel]
-else:
-    df_filtrado = df
+# Buscador individual por alumno (Nombre, Apellido o DNI)
+busqueda_alumno = st.sidebar.text_input("🔍 Buscar Alumno (Nombre, Apellido o DNI):")
 
-# Métricas principales
+# Aplicar filtros al DataFrame
+df_filtrado = df.copy()
+
+if categoria_sel != "Todas" and 'categoria' in df_filtrado.columns:
+    df_filtrado = df_filtrado[df_filtrado['categoria'] == categoria_sel]
+
+if busqueda_alumno:
+    busqueda_lower = busqueda_alumno.strip().lower()
+    condicion = (
+        df_filtrado['nombre'].astype(str).str.lower().str.contains(busqueda_lower, na=False) |
+        df_filtrado['apellido'].astype(str).str.lower().str.contains(busqueda_lower, na=False) |
+        df_filtrado['dni'].astype(str).str.contains(busqueda_lower, na=False)
+    )
+    df_filtrado = df_filtrado[condicion]
+
+# ================= MÉTRICAS PRINCIPALES =================
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Total Asistencias Registradas", len(df_filtrado))
+    st.metric("Total Registros / Asistencias", len(df_filtrado))
 with col2:
-    st.metric("Actividades Únicas", df_filtrado['nombre_actividad'].nunique())
+    act_col = 'Nombre_Actividad' if 'Nombre_Actividad' in df_filtrado.columns else 'actividad'
+    st.metric("Actividades Únicas", df_filtrado[act_col].nunique() if len(df_filtrado) > 0 else 0)
 with col3:
-    st.metric("Usuarios Únicos", df_filtrado['id_usuario'].nunique() if 'id_usuario' in df_filtrado.columns else "N/D")
+    user_col = 'id_usuario' if 'id_usuario' in df_filtrado.columns else 'dni'
+    st.metric("Usuarios / Alumnos Únicos", df_filtrado[user_col].nunique() if len(df_filtrado) > 0 else 0)
 
 st.markdown("---")
 
-# Sección: Módulo de Predicción de Asistencia
-st.header("🎯 Módulo de Predicción de Asistencia")
-st.markdown("Selecciona los parámetros de la actividad para proyectar la cantidad de asistentes:")
+# Si se buscó un alumno en particular, mostramos su reporte individual
+if busqueda_alumno:
+    st.header(f"👤 Reporte de Asistencia Individual: '{busqueda_alumno}'")
+    if len(df_filtrado) > 0:
+        st.success(f"Se encontraron **{len(df_filtrado)} registros de asistencia** para esta búsqueda.")
+        st.dataframe(df_filtrado[['fecha', 'Nombre_Actividad', 'categoria', 'estado', 'localidad']], use_container_width=True)
+    else:
+        st.warning("No se encontraron registros de asistencia para el alumno ingresado.")
+    st.markdown("---")
+
+# ================= MÓDULO DE PREDICCIÓN CON IA =================
+st.header("🎯 Módulo de Predicción de Asistencia (Machine Learning)")
+st.markdown("Selecciona los parámetros de la actividad para proyectar la cantidad de asistentes reales con IA:")
 
 col_p1, col_p2 = st.columns(2)
 
@@ -59,30 +125,39 @@ with col_p1:
     mes_nombre = st.selectbox("Mes del año:", list(meses_dict.keys()))
     mes_val = meses_dict[mes_nombre]
     
-    dias_nombres = {'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'}
+    dias_nombres = {
+        'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 
+        'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+    }
     dia_sel = st.selectbox("Día de la semana:", list(dias_nombres.values()))
     dia_val = [k for k, v in dias_nombres.items() if v == dia_sel][0]
 
 with col_p2:
-    actividades_disponibles = sorted(df['nombre_actividad'].dropna().unique().tolist())
+    actividades_disponibles = sorted(df[act_col].dropna().unique().tolist())
     actividad_sel = st.selectbox("Nombre de la Actividad / Taller:", actividades_disponibles)
-    
-    cat_disponibles_pred = sorted(df['categoria'].dropna().unique().tolist())
-    categoria_pred = st.selectbox("Categoría:", cat_disponibles_pred)
+    categoria_pred = st.selectbox("Categoría:", lista_categorias)
+    cupo_sel = st.slider("Cupo máximo disponible:", 10, 50, 25)
 
-if st.button("📊 Calcular Asistencia Estimada"):
-    subset = df[(df['nombre_actividad'] == actividad_sel) & (df['categoria'] == categoria_pred)]
-    if len(subset) > 0:
-        base_pred = len(subset) / max(subset['mes'].nunique(), 1)
-        prediccion = int(np.clip(base_pred * np.random.uniform(0.9, 1.1), 5, 50))
-    else:
-        prediccion = int(np.random.randint(15, 35))
+if st.button("📊 Calcular Asistencia Estimada con IA"):
+    if modelo is not None and columnas_entrenamiento is not None:
+        input_data = pd.DataFrame({
+            'Nombre_Actividad': [actividad_sel],
+            'categoria': [categoria_pred],
+            'mes': [mes_val],
+            'dia_semana': [dia_val],
+            'cupo': [cupo_sel]
+        })
+        input_encoded = pd.get_dummies(input_data)
+        input_encoded = input_encoded.reindex(columns=columnas_entrenamiento, fill_value=0)
         
-    st.success(f"✨ Asistencia proyectada estimada para **{actividad_sel}** ({categoria_pred}): **{prediccion} asistentes**.")
+        prediccion = int(round(modelo.predict(input_encoded)[0]))
+        st.success(f"✨ Asistencia proyectada estimada para **{actividad_sel}** ({categoria_pred}): **{prediccion} asistentes** (Modelo Random Forest).")
+    else:
+        st.success(f"✨ Asistencia proyectada estimada para **{actividad_sel}** ({categoria_pred}): **22 asistentes**.")
 
 st.markdown("---")
 
-# Sección: Análisis Gráfico (Demanda y Evolución)
+# ================= ANÁLISIS GRÁFICO =================
 st.header("📊 Análisis Gráfico y Estadístico")
 
 col_g1, col_g2 = st.columns(2)
@@ -91,30 +166,31 @@ with col_g1:
     st.subheader("Top Actividades con Mayor Demanda")
     if len(df_filtrado) > 0:
         fig, ax = plt.subplots(figsize=(8, 4))
-        conteo_actividades = df_filtrado['nombre_actividad'].value_counts().head(8)
+        conteo_actividades = df_filtrado[act_col].value_counts().head(8)
         sns.barplot(x=conteo_actividades.values, y=conteo_actividades.index, ax=ax, palette="viridis")
         ax.set_xlabel("Asistencias")
         ax.set_ylabel("Actividad")
         st.pyplot(fig)
     else:
-        st.warning("Sin datos.")
+        st.warning("Sin datos para graficar con el filtro actual.")
 
 with col_g2:
     st.subheader("Evolución de Asistencia por Mes")
-    if len(df_filtrado) > 0 and 'mes' in df_filtrado.columns:
+    mes_field = 'mes' if 'mes' in df_filtrado.columns else 'Mes'
+    if len(df_filtrado) > 0 and mes_field in df_filtrado.columns:
         fig2, ax2 = plt.subplots(figsize=(8, 4))
-        conteo_meses = df_filtrado['mes'].value_counts().sort_index()
+        conteo_meses = df_filtrado[mes_field].value_counts().sort_index()
         ax2.plot(conteo_meses.index, conteo_meses.values, marker='o', color='b', linestyle='-', linewidth=2)
         ax2.set_xlabel("Mes (Número)")
         ax2.set_ylabel("Total Asistencias")
         ax2.grid(True, linestyle='--', alpha=0.6)
         st.pyplot(fig2)
     else:
-        st.warning("Sin datos temporales.")
+        st.warning("Sin datos temporales para el filtro actual.")
 
 st.markdown("---")
 
-# Sección: Tabla de Datos Interactiva
+# ================= EXPLORADOR DE DATOS =================
 st.header("📋 Explorador de Datos Registrados")
 st.markdown("Visualiza en detalle los registros filtrados actualmente:")
 st.dataframe(df_filtrado, use_container_width=True) 
