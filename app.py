@@ -10,12 +10,12 @@ st.set_page_config(page_title="Punto Digital - Villa Ojo de Agua", layout="wide"
 st.title("💻 Panel de Gestión y Predicción - Punto Digital - Villa Ojo de Agua")
 st.markdown("---")
 
-# Cargar datos de manera sencilla y limpia
+# Cargar datos de manera segura
 @st.cache_data
 def cargar_datos():
     try:
         df = pd.read_csv("datos.csv", encoding="utf-8")
-    except:
+    except UnicodeDecodeError:
         df = pd.read_csv("datos.csv", encoding="latin1")
     return df
 
@@ -25,11 +25,18 @@ except Exception as e:
     st.error(f"Error al cargar los datos: {e}")
     st.stop()
 
-# Crear nombre completo combinando nombre y apellido si existen
+# Limpiar espacios en los nombres de las columnas
+df.columns = df.columns.str.strip()
+
+# Crear nombre completo de forma segura según las columnas disponibles
 if 'nombre' in df.columns and 'apellido' in df.columns:
     df['Alumno'] = df['nombre'].astype(str) + " " + df['apellido'].astype(str)
-else:
+elif 'nombre' in df.columns:
+    df['Alumno'] = df['nombre'].astype(str)
+elif 'id_usuario' in df.columns:
     df['Alumno'] = "Usuario " + df['id_usuario'].astype(str)
+else:
+    df['Alumno'] = "Estudiante"
 
 # Barra lateral con el título pedido
 st.sidebar.header("📁 Proyecto Punto Digital")
@@ -46,7 +53,7 @@ if 'categoria' in df.columns:
 else:
     df_filtrado = df
 
-# 2. NUEVO: Cuadro de búsqueda individual por alumno (como pidió el profesor)
+# 2. Cuadro de búsqueda individual por alumno
 alumnos_disponibles = sorted(df_filtrado['Alumno'].dropna().unique().tolist())
 alumno_sel = st.sidebar.selectbox("🔍 Buscar Alumno Individual:", ["Todos"] + alumnos_disponibles)
 
@@ -61,7 +68,7 @@ with col2:
     col_act = 'nombre_actividad' if 'nombre_actividad' in df.columns else ('actividad' if 'actividad' in df.columns else None)
     st.metric("Actividades Únicas", df_filtrado[col_act].nunique() if col_act and col_act in df_filtrado.columns else 0)
 with col3:
-    st.metric("Usuarios Únicos", df_filtrado['id_usuario'].nunique() if 'id_usuario' in df_filtrado.columns else 0)
+    st.metric("Usuarios Únicos", df_filtrado['id_usuario'].nunique() if 'id_usuario' in df.columns else 0)
 
 st.markdown("---")
 
@@ -133,7 +140,7 @@ with col_g2:
 
 st.markdown("---")
 
-# Explorador de Datos Registrados (Con nombres y apellidos visibles)
+# Explorador de Datos Registrados
 st.header("📋 Explorador de Datos Registrados")
 st.markdown("Visualiza en detalle los registros filtrados (con nombres y apellidos de los estudiantes):")
-st.dataframe(df_filtrado, use_container_width=True) 
+st.dataframe(df_filtrado, use_container_width=True)
