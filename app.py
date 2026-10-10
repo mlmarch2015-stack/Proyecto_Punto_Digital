@@ -279,64 +279,23 @@ if 'comprobante' in st.session_state:
         
         with col_btn1:
             import streamlit.components.v1 as components
+            # Componente seguro con altura correcta de 80 píxeles para que no se corte
             components.html("""
-                <style>
-                    @media print {
-                        /* Oculta toda la página por defecto al imprimir */
-                        body * {
-                            visibility: hidden;
-                        }
-                        /* Muestra únicamente el contenedor del comprobante */
-                        #comprobante-imprimir, #comprobante-imprimir * {
-                            visibility: visible;
-                        }
-                        #comprobante-imprimir {
-                            position: absolute;
-                            left: 0;
-                            top: 0;
-                            width: 100%;
-                        }
-                        /* Oculta el botón de imprimir en la copia impresa */
-                        .no-print {
-                            display: none;
-                        }
-                    }
-                </style>
-
-                <!-- Contenedor único para la impresión -->
-                <div id="comprobante-imprimir" style="font-family: sans-serif; padding: 10px;">
-                    <h3 style="color: #0e1117; margin-bottom: 5px;">🎫 Comprobante Digital de Inscripción</h3>
-                    <p style="color: #555; font-size: 13px; margin-bottom: 15px;">Punto Digital Villa Ojo de Agua</p>
-                    <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 15px;">
-                    
-                    <div style="font-size: 14px; line-height: 1.6; color: #333;">
-                        <p><strong>Fecha:</strong> """ + c['fecha'] + """</p>
-                        <p><strong>Alumno/a:</strong> """ + c['nombre'] + " " + c['apellido'] + """</p>
-                        <p><strong>DNI:</strong> """ + str(c['dni']) + """</p>
-                        <p><strong>Localidad:</strong> """ + str(c['localidad']) + """</p>
-                        <p><strong>Actividad / Taller:</strong> """ + str(c['Nombre_Actividad']) + """</p>
-                        <p><strong>Categoría:</strong> """ + str(c['categoria']) + """</p>
-                        <p><strong>Estado:</strong> """ + str(c['estado']) + """</p>
-                    </div>
-                </div>
-
-                <div class="no-print" style="margin-top: 10px;">
-                    <button onclick="parent.window.print()" style="
-                        background-color: #ff4b4b;
-                        color: white;
-                        padding: 0.6rem 1rem;
-                        border: none;
-                        border-radius: 0.3rem;
-                        font-weight: 600;
-                        cursor: pointer;
-                        width: 100%;
-                        font-family: sans-serif;
-                        font-size: 14px;
-                    ">
-                        🖨️ Imprimir / Guardar PDF
-                    </button>
-                </div>
-            """, height=240) 
+                <button onclick="parent.window.print()" style="
+                    background-color: #ff4b4b;
+                    color: white;
+                    padding: 0.6rem 1rem;
+                    border: none;
+                    border-radius: 0.3rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    width: 100%;
+                    font-family: sans-serif;
+                    font-size: 14px;
+                ">
+                    🖨️ Imprimir / Guardar PDF
+                </button>
+            """, height=80)
             
         with col_btn2:
             if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
