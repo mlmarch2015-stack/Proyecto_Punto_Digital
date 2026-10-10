@@ -216,13 +216,11 @@ with st.form("form_nueva_inscripcion"):
         nuevo_cupo = st.number_input("Cupo de la actividad:", min_value=1, max_value=100, value=25)
         nuevo_estado = st.selectbox("Estado:", ["Inscripto", "Asistió", "Confirmado"])
 
-    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
-
-    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción", key="btn_guardar_inscripcion")
+    # UN SOLO botón de envío con su clave única
+    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción", key="btn_nico_unico")
 
     if submit_button:
         if nuevo_nombre and nuevo_apellido and nuevo_dni:
-            # Creamos la nueva fila con los datos actuales
             nueva_fila = {
                 'fecha': pd.Timestamp.now().strftime('%Y-%m-%d'),
                 'nombre': nuevo_nombre,
@@ -237,7 +235,6 @@ with st.form("form_nueva_inscripcion"):
                 'dia_semana': pd.Timestamp.now().strftime('%A')
             }
             
-            # Cargamos el CSV actual, le sumamos la fila y lo guardamos
             try:
                 df_actual = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
             except Exception:
@@ -249,7 +246,6 @@ with st.form("form_nueva_inscripcion"):
             st.success(f"🎉 ¡Inscripción de **{nuevo_nombre} {nuevo_apellido}** guardada con éxito en la base de datos!")
             st.balloons()
             
-            # Guardamos el comprobante en la sesión para mostrarlo en pantalla
             st.session_state['comprobante'] = nueva_fila
         else:
             st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI del alumno.")
@@ -260,7 +256,6 @@ if 'comprobante' in st.session_state:
     st.markdown("---")
     st.markdown("### 🎫 Comprobante Digital de Inscripción - Punto Digital")
     
-    # Contenedor con aspecto de ticket/comprobante
     with st.container():
         st.info("¡Inscripción registrada correctamente! Presenta este comprobante (o tus datos) al asistir.")
         col_c1, col_c2 = st.columns(2)
@@ -275,6 +270,6 @@ if 'comprobante' in st.session_state:
             st.write(f"**Estado:** {c['estado']}")
             st.write(f"**Institución:** Punto Digital Villa Ojo de Agua")
             
-        if st.button("🔄 Registrar otra inscripción"):
+        if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
             del st.session_state['comprobante']
             st.rerun() 
