@@ -278,21 +278,23 @@ if 'comprobante' in st.session_state:
         col_btn1, col_btn2 = st.columns(2)
         
         with col_btn1:
-            # Botón para imprimir usando JavaScript nativo del navegador
-            st.markdown("""
-                <button onclick="window.print()" style="
+            import streamlit.components.v1 as components
+            components.html("""
+                <button onclick="parent.window.print()" style="
                     background-color: #ff4b4b;
                     color: white;
-                    padding: 0.5rem 1rem;
+                    padding: 0.6rem 1rem;
                     border: none;
                     border-radius: 0.3rem;
                     font-weight: 600;
                     cursor: pointer;
                     width: 100%;
+                    font-family: sans-serif;
+                    font-size: 14px;
                 ">
                     🖨️ Imprimir / Guardar PDF
                 </button>
-            """, unsafe_allow_html=True)
+            """, height=60) 
             
         with col_btn2:
             if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
