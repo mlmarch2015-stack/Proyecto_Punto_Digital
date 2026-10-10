@@ -218,6 +218,8 @@ with st.form("form_nueva_inscripcion"):
 
     submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
 
+    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
+
     if submit_button:
         if nuevo_nombre and nuevo_apellido and nuevo_dni:
             # Creamos la nueva fila con los datos actuales
@@ -234,7 +236,7 @@ with st.form("form_nueva_inscripcion"):
                 'mes': pd.Timestamp.now().month,
                 'dia_semana': pd.Timestamp.now().strftime('%A')
             }
-
+            
             # Cargamos el CSV actual, le sumamos la fila y lo guardamos
             try:
                 df_actual = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
@@ -244,8 +246,35 @@ with st.form("form_nueva_inscripcion"):
             df_nuevo_registro = pd.concat([df_actual, pd.DataFrame([nueva_fila])], ignore_index=True)
             df_nuevo_registro.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
             
-            st.success(f"🎉 ¡Inscripción de **{nuevo_nombre} {nuevo_apellido}** guardada con éxito en `datos.csv`!")
-            st.balloons() # Pequeña animación de festejo
-            st.rerun() # Recarga la app para que aparezca en las métricas al instante
+            st.success(f"🎉 ¡Inscripción de **{nuevo_nombre} {nuevo_apellido}** guardada con éxito en la base de datos!")
+            st.balloons()
+            
+            # Guardamos el comprobante en la sesión para mostrarlo en pantalla
+            st.session_state['comprobante'] = nueva_fila
         else:
             st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI del alumno.")
+
+# ================= MOSTRAR COMPROBANTE DIGITAL EN PANTALLA =================
+if 'comprobante' in st.session_state:
+    c = st.session_state['comprobante']
+    st.markdown("---")
+    st.markdown("### 🎫 Comprobante Digital de Inscripción - Punto Digital")
+    
+    # Contenedor con aspecto de ticket/comprobante
+    with st.container():
+        st.info("¡Inscripción registrada correctamente! Presenta este comprobante (o tus datos) al asistir.")
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            st.write(f"**Fecha de Inscripción:** {c['fecha']}")
+            st.write(f"**Alumno/a:** {c['nombre']} {c['apellido']}")
+            st.write(f"**DNI:** {c['dni']}")
+            st.write(f"**Localidad:** {c['localidad']}")
+        with col_c2:
+            st.write(f"**Actividad / Taller:** {c['Nombre_Actividad']}")
+            st.write(f"**Categoría:** {c['categoria']}")
+            st.write(f"**Estado:** {c['estado']}")
+            st.write(f"**Institución:** Punto Digital Villa Ojo de Agua")
+            
+        if st.button("🔄 Registrar otra inscripción"):
+            del st.session_state['comprobante']
+            st.rerun() 
