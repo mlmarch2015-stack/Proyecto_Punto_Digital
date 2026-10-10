@@ -218,7 +218,7 @@ with st.form("form_nueva_inscripcion"):
 
     submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
 
-    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
+    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción", key="btn_guardar_inscripcion")
 
     if submit_button:
         if nuevo_nombre and nuevo_apellido and nuevo_dni:
