@@ -19,7 +19,7 @@ with col_logo:
 
 with col_titulo:
     st.markdown("## 💻 Panel de Gestión y Predicción")
-    st.markdown("### Punto Digital Villa Ojo de Agua")
+    st.markdown("### Punto Digital - Villa Ojo de Agua")
 
 st.markdown("---")
 
