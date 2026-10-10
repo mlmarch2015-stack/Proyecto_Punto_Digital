@@ -255,49 +255,96 @@ if 'comprobante' in st.session_state:
     c = st.session_state['comprobante']
     st.markdown("---")
     
-    # Contenedor con aspecto de ticket/comprobante
-    with st.container():
-        st.markdown("### 🎫 Comprobante Digital de Inscripción - Punto Digital")
-        st.info("¡Inscripción registrada correctamente! Presenta este comprobante (o tus datos) al asistir.")
+    # CSS para ocultar todo lo que NO sea el comprobante al momento de imprimir
+    st.markdown("""
+        <style>
+            @media print {
+                /* Ocultar barra lateral, cabeceras, pies de página e inputs de Streamlit */
+                [data-testid="stSidebar"], 
+                header, 
+                footer, 
+                .stButton, 
+                iframe, 
+                .main > div:first-child > div:nth-child(-n+5) {
+                    display: none !important;
+                }
+                
+                /* Estilo del área del comprobante para ocupar solo una hoja */
+                .comprobante-container {
+                    border: 2px solid #333 !important;
+                    padding: 25px !important;
+                    border-radius: 8px !important;
+                    background-color: #ffffff !important;
+                    color: #000000 !important;
+                    margin: 20px 0 !important;
+                    page-break-inside: avoid !important;
+                }
+                
+                .comprobante-container * {
+                    color: #000000 !important;
+                }
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # HTML visual del comprobante de inscripción
+    html_comprobante = f"""
+    <div class="comprobante-container" style="
+        border: 2px dashed #007bff; 
+        padding: 20px; 
+        border-radius: 10px; 
+        background-color: #f8f9fa; 
+        color: #212529;
+        margin-bottom: 15px;">
+        <h2 style="margin-top: 0; color: #0d6efd; text-align: center;">🎫 Comprobante de Inscripción</h2>
+        <p style="text-align: center; font-weight: bold; margin-bottom: 20px;">Punto Digital Villa Ojo de Agua</p>
+        <hr style="border: 0; border-top: 1px solid #ccc; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; font-size: 15px; line-height: 1.8;">
+            <div style="width: 48%;">
+                <p><strong>Fecha de Inscripción:</strong> {c['fecha']}</p>
+                <p><strong>Alumno/a:</strong> {c['nombre']} {c['apellido']}</p>
+                <p><strong>DNI:</strong> {c['dni']}</p>
+                <p><strong>Localidad:</strong> {c['localidad']}</p>
+            </div>
+            <div style="width: 48%;">
+                <p><strong>Actividad / Taller:</strong> {c['Nombre_Actividad']}</p>
+                <p><strong>Categoría:</strong> {c['categoria']}</p>
+                <p><strong>Estado:</strong> {c['estado']}</p>
+                <p><strong>Institución:</strong> Punto Digital Villa Ojo de Agua</p>
+            </div>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #ccc; margin-top: 20px;">
+        <p style="text-align: center; font-size: 12px; color: #6c757d; margin-bottom: 0;">
+            Presente este comprobante o indique su DNI al asistir a la actividad.
+        </p>
+    </div>
+    """
+    
+    st.markdown(html_comprobante, unsafe_allow_html=True)
+    
+    # Botones de acción
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        import streamlit.components.v1 as components
+        components.html("""
+            <button onclick="parent.window.print()" style="
+                background-color: #ff4b4b;
+                color: white;
+                padding: 0.6rem 1rem;
+                border: none;
+                border-radius: 0.3rem;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+                font-family: sans-serif;
+                font-size: 14px;
+            ">
+                🖨️ Imprimir / Guardar PDF (Solo Comprobante)
+            </button>
+        """, height=60)
         
-        col_c1, col_c2 = st.columns(2)
-        with col_c1:
-            st.write(f"**Fecha de Inscripción:** {c['fecha']}")
-            st.write(f"**Alumno/a:** {c['nombre']} {c['apellido']}")
-            st.write(f"**DNI:** {c['dni']}")
-            st.write(f"**Localidad:** {c['localidad']}")
-        with col_c2:
-            st.write(f"**Actividad / Taller:** {c['Nombre_Actividad']}")
-            st.write(f"**Categoría:** {c['categoria']}")
-            st.write(f"**Estado:** {c['estado']}")
-            st.write(f"**Institución:** Punto Digital Villa Ojo de Agua")
-            
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Botones de acción para el comprobante
-        col_btn1, col_btn2 = st.columns(2)
-        
-        with col_btn1:
-            import streamlit.components.v1 as components
-            # Componente seguro con altura correcta de 80 píxeles para que no se corte
-            components.html("""
-                <button onclick="parent.window.print()" style="
-                    background-color: #ff4b4b;
-                    color: white;
-                    padding: 0.6rem 1rem;
-                    border: none;
-                    border-radius: 0.3rem;
-                    font-weight: 600;
-                    cursor: pointer;
-                    width: 100%;
-                    font-family: sans-serif;
-                    font-size: 14px;
-                ">
-                    🖨️ Imprimir / Guardar PDF
-                </button>
-            """, height=80)
-            
-        with col_btn2:
-            if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
-                del st.session_state['comprobante']
-                st.rerun() 
+    with col_btn2:
+        if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
+            del st.session_state['comprobante']
+            st.rerun() 
