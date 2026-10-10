@@ -196,3 +196,56 @@ st.markdown("---")
 st.header("📋 Explorador de Datos Registrados")
 st.markdown("Visualiza en detalle los registros filtrados actualmente:")
 st.dataframe(df_filtrado, use_container_width=True)
+
+st.markdown("---")
+st.header("📝 Registrar Nueva Inscripción / Alumno")
+st.markdown("Agrega un nuevo asistente al sistema y guárdalo directamente en la base de datos:")
+
+with st.form("form_nueva_inscripcion"):
+    col_f1, col_f2 = st.columns(2)
+    
+    with col_f1:
+        nuevo_nombre = st.text_input("Nombre:")
+        nuevo_apellido = st.text_input("Apellido:")
+        nuevo_dni = st.text_input("DNI:")
+        nueva_localidad = st.text_input("Localidad:", value="Villa Ojo de Agua")
+        
+    with col_f2:
+        nueva_actividad = st.selectbox("Actividad / Taller:", sorted(df[act_col].dropna().unique().tolist()) if len(df) > 0 else ["Taller General"])
+        nueva_categoria = st.selectbox("Categoría:", lista_categorias)
+        nuevo_cupo = st.number_input("Cupo de la actividad:", min_value=1, max_value=100, value=25)
+        nuevo_estado = st.selectbox("Estado:", ["Inscripto", "Asistió", "Confirmado"])
+
+    submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción")
+
+    if submit_button:
+        if nuevo_nombre and nuevo_apellido and nuevo_dni:
+            # Creamos la nueva fila con los datos actuales
+            nueva_fila = {
+                'fecha': pd.Timestamp.now().strftime('%Y-%m-%d'),
+                'nombre': nuevo_nombre,
+                'apellido': nuevo_apellido,
+                'dni': nuevo_dni,
+                'localidad': nueva_localidad,
+                'Nombre_Actividad': nueva_actividad,
+                'categoria': nueva_categoria,
+                'cupo': nuevo_cupo,
+                'estado': nuevo_estado,
+                'mes': pd.Timestamp.now().month,
+                'dia_semana': pd.Timestamp.now().strftime('%A')
+            }
+
+            # Cargamos el CSV actual, le sumamos la fila y lo guardamos
+            try:
+                df_actual = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
+            except Exception:
+                df_actual = pd.read_csv("datos.csv", sep=";", encoding="latin-1")
+                
+            df_nuevo_registro = pd.concat([df_actual, pd.DataFrame([nueva_fila])], ignore_index=True)
+            df_nuevo_registro.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
+            
+            st.success(f"🎉 ¡Inscripción de **{nuevo_nombre} {nuevo_apellido}** guardada con éxito en `datos.csv`!")
+            st.balloons() # Pequeña animación de festejo
+            st.rerun() # Recarga la app para que aparezca en las métricas al instante
+        else:
+            st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI del alumno.")
