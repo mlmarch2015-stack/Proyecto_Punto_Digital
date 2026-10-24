@@ -42,7 +42,7 @@ def cargar_datos():
     if not os.path.exists(archivo):
         df_init = pd.DataFrame(columns=[
             'fecha', 'nombre', 'apellido', 'dni', 'localidad', 
-            'Nombre_Actividad', 'categoria', 'cupo', 'estado', 'mes', 'dia_semana'
+            'categoria', 'actividad', 'tramite', 'cupo', 'estado', 'mes', 'dia_semana'
         ])
         df_init.to_csv(archivo, index=False, sep=";", encoding="utf-8")
     try:
@@ -52,12 +52,24 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# ================= 3. DICCIONARIO OFICIAL DE CATEGORÍAS Y ACTIVIDADES =================
-CATEGORIAS_ACTIVIDADES = {
-    "Administrativo": ["Consultas", "Trámites", "Asesoramiento"],
-    "Taller": ["Alfabetización Digital", "Canva", "Excel", "Word", "PowerPoint"],
-    "Capacitación": ["Ciudadanía Digital", "Impresión 3D", "Marketing Digital", "Python", "Robótica"],
-    "Entretenimiento": ["Cine", "Juegos en Red"]
+# ================= 3. ESTRUCTURA DE CATEGORÍAS Y ACTIVIDADES =================
+CATEGORIAS_ESTRUCTURA = {
+    "Administrativo": {
+        "actividades": ["Atención Presencial", "Gestión Online", "Asesoramiento Ciudadano"],
+        "tramites": ["Consultas", "Trámites Generales", "Asesoramiento"]
+    },
+    "Taller": {
+        "actividades": ["Alfabetización Digital", "Canva", "Excel", "Word", "PowerPoint"],
+        "tramites": ["Inscripción Inicial", "Nivel Avanzado", "Práctica Guiada"]
+    },
+    "Capacitación": {
+        "actividades": ["Ciudadanía Digital", "Impresión 3D", "Marketing Digital", "Python", "Robótica"],
+        "tramites": ["Curso Completo", "Taller Intensivo", "Certificación"]
+    },
+    "Entretenimiento": {
+        "actividades": ["Cine", "Juegos en Red"],
+        "tramites": ["Función Libre", "Torneo Gamer", "Recreación"]
+    }
 }
 
 LISTA_LOCALIDADES = [
@@ -73,7 +85,6 @@ elif os.path.exists("punto_digital_logo.jpg"):
 
 st.sidebar.title("📌 Menú Principal")
 
-# Secciones en orden invertido solicitado
 pagina = st.sidebar.radio("Seleccione una sección:", [
     "🤖 Machine Learning",
     "📊 Estadísticas y Datos",
@@ -82,26 +93,23 @@ pagina = st.sidebar.radio("Seleccione una sección:", [
 ])
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🔍 Filtros y Búsqueda Global")
+st.sidebar.subheader("🔍 Filtros Globales")
 
-# Filtro múltiple de Localidades
 localidades_seleccionadas = st.sidebar.multiselect(
     "Filtrar por Localidad(es):",
     options=LISTA_LOCALIDADES,
     default=LISTA_LOCALIDADES
 )
 
-# Filtro múltiple de Categorías (Inscripciones / Administración)
 categorias_seleccionadas = st.sidebar.multiselect(
     "Filtrar por Categoría(s):",
-    options=list(CATEGORIAS_ACTIVIDADES.keys()),
-    default=list(CATEGORIAS_ACTIVIDADES.keys())
+    options=list(CATEGORIAS_ESTRUCTURA.keys()),
+    default=list(CATEGORIAS_ESTRUCTURA.keys())
 )
 
-# Filtro de búsqueda por Alumno (Nombre, Apellido o DNI)
 busqueda_alumno = st.sidebar.text_input("Buscar Alumno (Nombre, Apellido o DNI):")
 
-# Aplicar filtros al DataFrame global de la app
+# Aplicar filtros
 df_filtrado = df.copy()
 if len(df_filtrado) > 0:
     if 'localidad' in df_filtrado.columns:
@@ -129,62 +137,69 @@ if pagina == "📝 Registrar Inscripción":
         st.image("punto_digital_logo.jpg", width=250)
         
     st.header("📝 Registrar Nueva Inscripción / Trámite")
-    st.markdown("Seleccione la categoría y la actividad correspondiente para registrar al asistente.")
+    st.markdown("Complete la información del alumno. Al elegir la categoría se cargarán automáticamente sus actividades correspondientes.")
 
-    with st.form("form_nueva_inscripcion"):
-        col_f1, col_f2 = st.columns(2)
+    col_f1, col_f2 = st.columns(2)
+    
+    with col_f1:
+        nuevo_nombre = st.text_input("Nombre:", key="input_nombre")
+        nuevo_apellido = st.text_input("Apellido:", key="input_apellido")
+        nuevo_dni = st.text_input("DNI:", key="input_dni")
+        nueva_localidad = st.selectbox("Localidad:", options=LISTA_LOCALIDADES, key="select_localidad")
         
-        with col_f1:
-            nuevo_nombre = st.text_input("Nombre:")
-            nuevo_apellido = st.text_input("Apellido:")
-            nuevo_dni = st.text_input("DNI:")
-            nueva_localidad = st.selectbox("Localidad:", options=LISTA_LOCALIDADES)
-            
-        with col_f2:
-            # Selector de Categoría principal
-            nueva_categoria = st.selectbox("Categoría:", options=list(CATEGORIAS_ACTIVIDADES.keys()))
-            
-            # Selector de Actividad filtrado según la categoría elegida
-            actividades_disponibles = CATEGORIAS_ACTIVIDADES[nueva_categoria]
-            nueva_actividad = st.selectbox("Actividad / Trámite:", options=actividades_disponibles)
-            
-            nuevo_cupo = st.number_input("Cupo de la actividad:", min_value=1, max_value=100, value=25)
+    with col_f2:
+        # 1. Celda Categoría
+        nueva_categoria = st.selectbox("Categoría:", options=list(CATEGORIAS_ESTRUCTURA.keys()), key="select_cat")
+        
+        # 2. Celda intermedia de Actividades
+        actividades_opciones = CATEGORIAS_ESTRUCTURA[nueva_categoria]["actividades"]
+        nueva_actividad = st.selectbox("Actividad:", options=actividades_opciones, key="select_act")
+        
+        # 3. Celda de Trámite / Detalle
+        tramites_opciones = CATEGORIAS_ESTRUCTURA[nueva_categoria]["tramites"]
+        nuevo_tramite = st.selectbox("Trámite:", options=tramites_opciones, key="select_tramite")
+        
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1:
+            nuevo_cupo = st.number_input("Cupo:", min_value=1, max_value=100, value=25)
+        with col_sub2:
             nuevo_estado = st.selectbox("Estado:", ["Inscripto", "Asistió", "Confirmado"])
 
-        submit_button = st.form_submit_button(label="💾 Guardar Registro", key="btn_guardar_inscripcion")
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("💾 Guardar Registro", type="primary", use_container_width=True):
+        if nuevo_nombre and nuevo_apellido and nuevo_dni:
+            nueva_fila = {
+                'fecha': pd.Timestamp.now().strftime('%Y-%m-%d'),
+                'nombre': nuevo_nombre,
+                'apellido': nuevo_apellido,
+                'dni': str(nuevo_dni),
+                'localidad': nueva_localidad,
+                'categoria': nueva_categoria,
+                'actividad': nueva_actividad,
+                'tramite': nuevo_tramite,
+                'cupo': nuevo_cupo,
+                'estado': nuevo_estado,
+                'mes': pd.Timestamp.now().month,
+                'dia_semana': pd.Timestamp.now().strftime('%A')
+            }
+            
+            try:
+                df_actual = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
+            except Exception:
+                df_actual = pd.read_csv("datos.csv", sep=";", encoding="latin-1")
+                
+            df_nuevo_registro = pd.concat([df_actual, pd.DataFrame([nueva_fila])], ignore_index=True)
+            df_nuevo_registro.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
+            
+            st.success(f"🎉 ¡Registro de **{nuevo_nombre} {nuevo_apellido}** guardado con éxito!")
+            st.balloons()
+            
+            # Guardar comprobante en session state para habilitar la impresión
+            st.session_state['comprobante'] = nueva_fila
+        else:
+            st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI.")
 
-        if submit_button:
-            if nuevo_nombre and nuevo_apellido and nuevo_dni:
-                nueva_fila = {
-                    'fecha': pd.Timestamp.now().strftime('%Y-%m-%d'),
-                    'nombre': nuevo_nombre,
-                    'apellido': nuevo_apellido,
-                    'dni': str(nuevo_dni),
-                    'localidad': nueva_localidad,
-                    'Nombre_Actividad': nueva_actividad,
-                    'categoria': nueva_categoria,
-                    'cupo': nuevo_cupo,
-                    'estado': nuevo_estado,
-                    'mes': pd.Timestamp.now().month,
-                    'dia_semana': pd.Timestamp.now().strftime('%A')
-                }
-                
-                try:
-                    df_actual = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
-                except Exception:
-                    df_actual = pd.read_csv("datos.csv", sep=";", encoding="latin-1")
-                    
-                df_nuevo_registro = pd.concat([df_actual, pd.DataFrame([nueva_fila])], ignore_index=True)
-                df_nuevo_registro.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
-                
-                st.success(f"🎉 ¡Registro de **{nuevo_nombre} {nuevo_apellido}** guardado con éxito!")
-                st.balloons()
-                
-                st.session_state['comprobante'] = nueva_fila
-            else:
-                st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI.")
-
-    # Mostrar Comprobante Digital con Impresión Limpia
+    # ================= COMPROBANTE DIGITAL E IMPRESIÓN =================
     if 'comprobante' in st.session_state:
         c = st.session_state['comprobante']
         st.markdown("---")
@@ -202,23 +217,25 @@ if pagina == "📝 Registrar Inscripción":
         
         st.markdown(f"""
         <div id="comprobante-imprimir" style="border: 2px dashed #0d6efd; padding: 25px; border-radius: 10px; background-color: #f8f9fa; color: #212529;">
-            <h3 style="margin-top: 0; color: #0d6efd; text-align: center;">🎫 Comprobante Digital - Punto Digital</h3>
-            <p style="text-align: center; font-weight: bold;">Villa Ojo de Agua</p>
+            <h3 style="margin-top: 0; color: #0d6efd; text-align: center;">🎫 Comprobante Digital de Inscripción</h3>
+            <p style="text-align: center; font-weight: bold;">Punto Digital Villa Ojo de Agua</p>
             <hr style="border: 0; border-top: 1px solid #ccc;">
-            <div style="display: flex; justify-content: space-between; font-size: 14px; line-height: 1.6;">
-                <div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; line-height: 1.8;">
+                <div style="width: 48%;">
                     <p><strong>Fecha:</strong> {c['fecha']}</p>
                     <p><strong>Alumno/a:</strong> {c['nombre']} {c['apellido']}</p>
                     <p><strong>DNI:</strong> {c['dni']}</p>
                     <p><strong>Localidad:</strong> {c['localidad']}</p>
                 </div>
-                <div>
-                    <p><strong>Actividad / Trámite:</strong> {c['Nombre_Actividad']}</p>
+                <div style="width: 48%;">
                     <p><strong>Categoría:</strong> {c['categoria']}</p>
+                    <p><strong>Actividad:</strong> {c['actividad']}</p>
+                    <p><strong>Trámite / Detalle:</strong> {c['tramite']}</p>
                     <p><strong>Estado:</strong> {c['estado']}</p>
-                    <p><strong>Institución:</strong> Punto Digital</p>
                 </div>
             </div>
+            <hr style="border: 0; border-top: 1px solid #ccc;">
+            <p style="text-align: center; font-size: 12px; color: #666; margin-bottom: 0;">Punto Digital Villa Ojo de Agua - Sistema de Gestión</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -234,13 +251,13 @@ if pagina == "📝 Registrar Inscripción":
                 </button>
             """, height=60)
         with col_btn2:
-            if st.button("🔄 Registrar otro", key="btn_reset_comprobante"):
+            if st.button("🔄 Registrar otro alumno", key="btn_reset_comprobante"):
                 del st.session_state['comprobante']
                 st.rerun()
 
 elif pagina == "📋 Gestión y Trámites":
     st.header("📋 Gestión y Trámites")
-    st.markdown("Visualización de registros filtrados por localidad, categoría y búsqueda de alumnos.")
+    st.markdown("Visualización de registros filtrados.")
     if len(df_filtrado) > 0:
         st.dataframe(df_filtrado, use_container_width=True)
         csv_data = df_filtrado.to_csv(index=False, sep=";").encode('utf-8')
@@ -258,9 +275,10 @@ elif pagina == "📊 Estadísticas y Datos":
     if len(df_filtrado) > 0:
         col_e1, col_e2 = st.columns(2)
         with col_e1:
-            st.subheader("Registros por Actividad / Trámite")
+            st.subheader("Registros por Actividad")
             fig, ax = plt.subplots(figsize=(6, 4))
-            sns.countplot(data=df_filtrado, y='Nombre_Actividad', order=df_filtrado['Nombre_Actividad'].value_counts().index, ax=ax, palette="viridis")
+            act_col = 'actividad' if 'actividad' in df_filtrado.columns else 'Nombre_Actividad'
+            sns.countplot(data=df_filtrado, y=act_col, order=df_filtrado[act_col].value_counts().index, ax=ax, palette="viridis")
             st.pyplot(fig)
         with col_e2:
             st.subheader("Distribución por Categoría")
@@ -273,7 +291,7 @@ elif pagina == "📊 Estadísticas y Datos":
 
 elif pagina == "🤖 Machine Learning":
     st.header("🤖 Módulo de Predicción")
-    st.markdown("Herramienta de machine learning integrada para análisis y predicciones.")
+    st.markdown("Análisis predictivo sobre los registros de asistencia.")
     if len(df_filtrado) > 0:
         st.success("Modelo listo para operar con los registros filtrados actuales.")
         st.metric(label="Registros analizados", value=len(df_filtrado))
