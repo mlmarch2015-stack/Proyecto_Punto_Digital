@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
 import streamlit.components.v1 as components
 
@@ -77,10 +75,11 @@ LISTA_LOCALIDADES = [
     "Sol de Julio", "Bandera", "Añatuya", "Los Telares"
 ]
 
-# ================= 4. BARRA LATERAL (LOGO CIRCULAR, NAVEGACIÓN Y FILTROS) =================
-# Intercambio: Logo circular en la barra lateral
+# ================= 4. BARRA LATERAL (LOGO AJUSTADO, NAVEGACIÓN Y FILTROS) =================
 if os.path.exists("punto_digital_logo.jpg"):
-    st.sidebar.image("punto_digital_logo.jpg", use_container_width=True)
+    col_sb1, col_sb2, col_sb3 = st.sidebar.columns([1, 2, 1])
+    with col_sb2:
+        st.image("punto_digital_logo.jpg", width=140)
 elif os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
 
@@ -132,10 +131,9 @@ if st.sidebar.button("🔒 Cerrar Sesión"):
     st.session_state['autenticado'] = False
     st.rerun()
 
-# ================= 5. PÁGINAS DE LA APLICACIÓN (BANNER PANORÁMICO) =================
+# ================= 5. PÁGINAS DE LA APLICACIÓN =================
 
 if pagina == "🏠 Inicio / Presentación":
-    # Intercambio: Banner panorámico en la pantalla principal
     if os.path.exists("PuntoDigital.jpg"):
         st.image("PuntoDigital.jpg", use_container_width=True)
     elif os.path.exists("punto_digital_logo.jpg"):
@@ -160,14 +158,13 @@ if pagina == "🏠 Inicio / Presentación":
     
     with col_g1:
         st.info("📝 **Registrar Inscripción**\n\nPermite cargar nuevos ciudadanos o alumnos seleccionando su categoría, actividad, trámite y localidad, generando un comprobante digital listo para imprimir.")
-        st.info("📋 **Gestión y Trámites**\n\nVisualiza la base de datos completa con opción de aplicar filtros múltiples y descargar planillas en formato CSV.")
+        st.info("📋 **Gestión y Trámites**\n\nVisualiza la base de datos completa con opción de aplicar filtros múltiples, descargar planillas CSV y eliminar registros erróneos.")
         
     with col_g2:
-        st.info("📊 **Estadísticas y Datos**\n\nGráficos dinámicos e indicadores basados en los filtros de localidades y categorías seleccionadas en la barra lateral.")
+        st.info("📊 **Estadísticas y Datos**\n\nGráficos interactivos dinámicos basados en los filtros de localidades y categorías seleccionadas en la barra lateral.")
         st.info("🤖 **Machine Learning**\n\nHerramienta analítica y predictiva para evaluar tendencias de asistencia y participación ciudadana.")
 
 elif pagina == "📝 Registrar Inscripción":
-    # Intercambio: Banner panorámico en la pantalla principal
     if os.path.exists("PuntoDigital.jpg"):
         st.image("PuntoDigital.jpg", use_container_width=True)
     elif os.path.exists("punto_digital_logo.jpg"):
@@ -287,9 +284,32 @@ elif pagina == "📝 Registrar Inscripción":
 
 elif pagina == "📋 Gestión y Trámites":
     st.header("📋 Gestión y Trámites")
-    st.markdown("Visualización de registros filtrados.")
+    st.markdown("Visualización de registros filtrados con opciones de administración.")
+    
     if len(df_filtrado) > 0:
         st.dataframe(df_filtrado, use_container_width=True)
+        
+        # Opción para eliminar registros erróneos
+        with st.expander("🗑️ Eliminar un Registro por DNI"):
+            dni_a_borrar = st.text_input("Ingrese el DNI exacto del registro a eliminar:")
+            if st.button("❌ Eliminar Registro de la Base", type="secondary"):
+                if dni_a_borrar.strip() != "":
+                    try:
+                        df_full = pd.read_csv("datos.csv", sep=";", encoding="utf-8")
+                    except Exception:
+                        df_full = pd.read_csv("datos.csv", sep=";", encoding="latin-1")
+                    
+                    df_nuevo = df_full[df_full['dni'].astype(str) != dni_a_borrar.strip()]
+                    if len(df_nuevo) < len(df_full):
+                        df_nuevo.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
+                        st.success(f"✅ Registro con DNI {dni_a_borrar} eliminado correctamente. Actualice la página.")
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ No se encontró ningún registro con ese DNI.")
+                else:
+                    st.warning("⚠️ Por favor, ingrese un DNI válido.")
+
+        st.markdown("<br>", unsafe_allow_html=True)
         csv_data = df_filtrado.to_csv(index=False, sep=";").encode('utf-8')
         st.download_button(
             label="📥 Descargar registros filtrados en CSV",
@@ -301,21 +321,21 @@ elif pagina == "📋 Gestión y Trámites":
         st.info("No hay registros que coincidan con los filtros seleccionados.")
 
 elif pagina == "📊 Estadísticas y Datos":
-    st.header("📊 Estadísticas y Datos")
+    st.header("📊 Estadísticas y Datos Interactivos")
+    st.markdown("Gráficos interactivos generados en tiempo real según los filtros activos.")
+    
     if len(df_filtrado) > 0:
         col_e1, col_e2 = st.columns(2)
         with col_e1:
             st.subheader("Registros por Actividad")
-            fig, ax = plt.subplots(figsize=(6, 4))
             act_col = 'actividad' if 'actividad' in df_filtrado.columns else 'Nombre_Actividad'
-            sns.countplot(data=df_filtrado, y=act_col, order=df_filtrado[act_col].value_counts().index, ax=ax, palette="viridis")
-            st.pyplot(fig)
+            conteo_actividades = df_filtrado[act_col].value_counts()
+            st.bar_chart(conteo_actividades)
+            
         with col_e2:
-            st.subheader("Distribución por Categoría")
-            fig2, ax2 = plt.subplots(figsize=(6, 4))
-            df_filtrado['categoria'].value_counts().plot.pie(autopct="%1.1f%%", ax=ax2, startangle=90, colormap="Set2")
-            ax2.set_ylabel("")
-            st.pyplot(fig2)
+            st.subheader("Registros por Categoría")
+            conteo_categorias = df_filtrado['categoria'].value_counts()
+            st.bar_chart(conteo_categorias)
     else:
         st.warning("No hay suficientes datos bajo los filtros actuales para mostrar estadísticas.")
 
@@ -328,4 +348,4 @@ elif pagina == "🤖 Machine Learning":
         if st.button("🚀 Ejecutar Análisis Predictivo"):
             st.info("Predicción realizada con éxito. Tendencia estimada en óptimas condiciones.")
     else:
-        st.warning("Se necesitan registros bajo los filtros actuales para ejecutar el modelo.")  
+        st.warning("Se necesitan registros bajo los filtros actuales para ejecutar el modelo.") 
