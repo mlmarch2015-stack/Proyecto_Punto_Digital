@@ -52,25 +52,18 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# ================= 3. LISTAS OFICIALES =================
-LISTA_LOCALIDADES = [
-    "Sumampa", "Pinto", "Sol de Julio", "Bandera", 
-    "Añatuya", "Los Telares", "Villa Ojo de Agua"
-]
+# ================= 3. DICCIONARIO OFICIAL DE CATEGORÍAS Y ACTIVIDADES =================
+CATEGORIAS_ACTIVIDADES = {
+    "Administrativo": ["Consultas", "Trámites", "Asesoramiento"],
+    "Taller": ["Alfabetización Digital", "Canva", "Excel", "Word", "PowerPoint"],
+    "Capacitación": ["Ciudadanía Digital", "Impresión 3D", "Marketing Digital", "Python", "Robótica"],
+    "Entretenimiento": ["Cine", "Juegos en Red"]
+}
 
-def obtener_categoria(actividad):
-    talleres = ["Alfabetización Digital", "Canva", "Excel", "Word", "PowerPoint"]
-    capacitacion = ["Ciudadanía Digital", "Impresión 3D", "Marketing Digital", "Python", "Robótica"]
-    administrativo = ["Consultas", "Trámites"]
-    
-    if actividad in talleres:
-        return "Taller"
-    elif actividad in capacitacion:
-        return "Capacitación"
-    elif actividad in administrativo:
-        return "Administrativo"
-    else:
-        return "General"
+LISTA_LOCALIDADES = [
+    "Villa Ojo de Agua", "Sumampa", "Pinto", 
+    "Sol de Julio", "Bandera", "Añatuya", "Los Telares"
+]
 
 # ================= 4. BARRA LATERAL, NAVEGACIÓN Y FILTROS =================
 if os.path.exists("PuntoDigital.jpg"):
@@ -89,13 +82,20 @@ pagina = st.sidebar.radio("Seleccione una sección:", [
 ])
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🔍 Filtros y Búsqueda")
+st.sidebar.subheader("🔍 Filtros y Búsqueda Global")
 
 # Filtro múltiple de Localidades
 localidades_seleccionadas = st.sidebar.multiselect(
     "Filtrar por Localidad(es):",
     options=LISTA_LOCALIDADES,
     default=LISTA_LOCALIDADES
+)
+
+# Filtro múltiple de Categorías (Inscripciones / Administración)
+categorias_seleccionadas = st.sidebar.multiselect(
+    "Filtrar por Categoría(s):",
+    options=list(CATEGORIAS_ACTIVIDADES.keys()),
+    default=list(CATEGORIAS_ACTIVIDADES.keys())
 )
 
 # Filtro de búsqueda por Alumno (Nombre, Apellido o DNI)
@@ -106,6 +106,8 @@ df_filtrado = df.copy()
 if len(df_filtrado) > 0:
     if 'localidad' in df_filtrado.columns:
         df_filtrado = df_filtrado[df_filtrado['localidad'].isin(localidades_seleccionadas)]
+    if 'categoria' in df_filtrado.columns:
+        df_filtrado = df_filtrado[df_filtrado['categoria'].isin(categorias_seleccionadas)]
     
     if busqueda_alumno.strip() != "":
         q = busqueda_alumno.strip().lower()
@@ -127,7 +129,7 @@ if pagina == "📝 Registrar Inscripción":
         st.image("punto_digital_logo.jpg", width=250)
         
     st.header("📝 Registrar Nueva Inscripción / Trámite")
-    st.markdown("Complete los datos. La categoría se asigna automáticamente según la actividad seleccionada.")
+    st.markdown("Seleccione la categoría y la actividad correspondiente para registrar al asistente.")
 
     with st.form("form_nueva_inscripcion"):
         col_f1, col_f2 = st.columns(2)
@@ -139,21 +141,12 @@ if pagina == "📝 Registrar Inscripción":
             nueva_localidad = st.selectbox("Localidad:", options=LISTA_LOCALIDADES)
             
         with col_f2:
-            # Lista estructurada de actividades
-            lista_actividades = [
-                # Administrativo
-                "Consultas", "Trámites",
-                # Taller
-                "Alfabetización Digital", "Canva", "Excel", "Word", "PowerPoint",
-                # Capacitación
-                "Ciudadanía Digital", "Impresión 3D", "Marketing Digital", "Python", "Robótica"
-            ]
+            # Selector de Categoría principal
+            nueva_categoria = st.selectbox("Categoría:", options=list(CATEGORIAS_ACTIVIDADES.keys()))
             
-            nueva_actividad = st.selectbox("Actividad / Trámite:", options=lista_actividades)
-            
-            # Categoría automática por fórmula
-            nueva_categoria = obtener_categoria(nueva_actividad)
-            st.text_input("Categoría (Automática por Actividad):", value=nueva_categoria, disabled=True)
+            # Selector de Actividad filtrado según la categoría elegida
+            actividades_disponibles = CATEGORIAS_ACTIVIDADES[nueva_categoria]
+            nueva_actividad = st.selectbox("Actividad / Trámite:", options=actividades_disponibles)
             
             nuevo_cupo = st.number_input("Cupo de la actividad:", min_value=1, max_value=100, value=25)
             nuevo_estado = st.selectbox("Estado:", ["Inscripto", "Asistió", "Confirmado"])
@@ -247,7 +240,7 @@ if pagina == "📝 Registrar Inscripción":
 
 elif pagina == "📋 Gestión y Trámites":
     st.header("📋 Gestión y Trámites")
-    st.markdown("Visualización de registros filtrados por localidad y búsqueda de alumnos.")
+    st.markdown("Visualización de registros filtrados por localidad, categoría y búsqueda de alumnos.")
     if len(df_filtrado) > 0:
         st.dataframe(df_filtrado, use_container_width=True)
         csv_data = df_filtrado.to_csv(index=False, sep=";").encode('utf-8')
