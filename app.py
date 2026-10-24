@@ -78,7 +78,7 @@ LISTA_LOCALIDADES = [
 ]
 
 # ================= 4. BARRA LATERAL (LOGO AJUSTADO, NAVEGACIÓN Y FILTROS) =================
-# Se ajusta el ancho a 140 para que no quede gigante en la barra lateral
+# Se ajusta el ancho a 250 para que no quede gigante en la barra lateral
 if os.path.exists("punto_digital_logo.jpg"):
     col_sb1, col_sb2, col_sb3 = st.sidebar.columns([1, 2, 1])
     with col_sb2:
