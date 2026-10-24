@@ -82,7 +82,7 @@ LISTA_LOCALIDADES = [
 if os.path.exists("punto_digital_logo.jpg"):
     col_sb1, col_sb2, col_sb3 = st.sidebar.columns([1, 2, 1])
     with col_sb2:
-        st.image("punto_digital_logo.jpg", width=140)
+        st.image("punto_digital_logo.jpg", width=250)
 elif os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
 
