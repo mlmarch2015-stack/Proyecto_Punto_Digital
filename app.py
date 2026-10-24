@@ -7,37 +7,10 @@ import os
 import joblib
 import streamlit.components.v1 as components
 
-# ================= 1. CONTROL DE ACCESO (LOGIN) =================
-if 'autenticado' not in st.session_state:
-    st.session_state['autenticado'] = False
-
-if not st.session_state['autenticado']:
-    st.set_page_config(page_title="Acceso - Punto Digital", page_icon="🔐", layout="centered")
-    
-    col_l1, col_l2, col_l3 = st.columns([1,2,1])
-    with col_l2:
-        if os.path.exists("punto_digital_logo.jpg"):
-            st.image("punto_digital_logo.jpg", use_container_width=True)
-        st.markdown("<h2 style='text-align: center;'>🔐 Acceso al Sistema</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #666;'>Punto Digital Villa Ojo de Agua</p>", unsafe_allow_html=True)
-        
-        with st.form("login_form"):
-            usuario = st.text_input("Usuario:")
-            password = st.text_input("Contraseña:", type="password")
-            submit_login = st.form_submit_button("Ingresar al Panel", use_container_width=True)
-            
-            if submit_login:
-                # Credenciales de acceso
-                if usuario == "admin" and password == "puntodigital2026":
-                    st.session_state['autenticado'] = True
-                    st.rerun()
-                else:
-                    st.error("⚠️ Usuario o contraseña incorrectos.")
-    st.stop()
-
-# ================= 2. CONFIGURACIÓN GENERAL Y DATOS =================
+# ================= CONFIGURACIÓN GENERAL =================
 st.set_page_config(page_title="Punto Digital - Dashboard", page_icon="📊", layout="wide")
 
+# Cargar base de datos con persistencia
 @st.cache_data(ttl=0)
 def cargar_datos():
     archivo = "datos.csv"
@@ -54,7 +27,7 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# ================= 3. BARRA LATERAL Y NAVEGACIÓN =================
+# ================= BARRA LATERAL Y NAVEGACIÓN =================
 if os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
 elif os.path.exists("punto_digital_logo.jpg"):
@@ -68,37 +41,14 @@ pagina = st.sidebar.radio("Seleccione una sección:", [
     "🤖 Machine Learning"
 ])
 
-st.sidebar.markdown("---")
-if st.sidebar.button("🔒 Cerrar Sesión"):
-    st.session_state['autenticado'] = False
-    st.rerun()
-
-# ================= 4. AUTOMATIZACIÓN EXPLÍCITA DE CATEGORÍAS =================
-def obtener_categoria(actividad):
-    talleres = ["Alfabetización Digital", "Excel", "Word"]
-    administracion = ["Consulta", "Trámites"]
-    entretenimiento = ["Cine", "Juegos en Red"]
-    capacitacion = ["Python", "Capacitación Laboral", "Robótica para Niños", "Apoyo Escolar"]
-    
-    if actividad in talleres:
-        return "Taller"
-    elif actividad in administracion:
-        return "Administración"
-    elif actividad in entretenimiento:
-        return "Entretenimiento"
-    elif actividad in capacitacion:
-        return "Capacitación"
-    else:
-        return "Capacitación"
-
-# ================= 5. PÁGINAS DE LA APLICACIÓN =================
+# ================= PÁGINAS DE LA APLICACIÓN =================
 
 if pagina == "📝 Registrar Inscripción":
     if os.path.exists("punto_digital_logo.jpg"):
         st.image("punto_digital_logo.jpg", width=250)
         
-    st.header("📝 Registrar Nueva Inscripción / Trámite")
-    st.markdown("Complete los datos. La categoría se asigna automáticamente según la actividad seleccionada.")
+    st.header("📝 Registrar Nueva Inscripción / Alumno")
+    st.markdown("Agrega un nuevo asistente al sistema y guárdalo directamente en la base de datos:")
 
     with st.form("form_nueva_inscripcion"):
         col_f1, col_f2 = st.columns(2)
@@ -110,28 +60,20 @@ if pagina == "📝 Registrar Inscripción":
             nueva_localidad = st.text_input("Localidad:", value="Villa Ojo de Agua")
             
         with col_f2:
-            # Lista completa y organizada de actividades por categoría
-            lista_actividades = [
-                # Administración
-                "Consulta", "Trámites",
-                # Talleres
-                "Alfabetización Digital", "Excel", "Word",
-                # Entretenimiento
-                "Cine", "Juegos en Red",
-                # Capacitación
-                "Python", "Capacitación Laboral", "Robótica para Niños", "Apoyo Escolar"
-            ]
+            actividades_disponibles = sorted(df['Nombre_Actividad'].dropna().unique().tolist()) if len(df) > 0 and 'Nombre_Actividad' in df.columns else ["Alfabetización Digital"]
+            if not actividades_disponibles:
+                actividades_disponibles = ["Alfabetización Digital"]
+            nueva_actividad = st.selectbox("Actividad / Taller:", options=actividades_disponibles)
             
-            nueva_actividad = st.selectbox("Actividad / Trámite:", options=lista_actividades)
-            
-            # Fórmula automática de categoría
-            nueva_categoria = obtener_categoria(nueva_actividad)
-            st.text_input("Categoría (Automática):", value=nueva_categoria, disabled=True)
+            lista_categorias = sorted(df['categoria'].dropna().unique().tolist()) if len(df) > 0 and 'categoria' in df.columns else ["Capacitación", "Taller", "Asesoramiento / Trámites"]
+            if not lista_categorias:
+                lista_categorias = ["Capacitación"]
+            nueva_categoria = st.selectbox("Categoría:", options=lista_categorias)
             
             nuevo_cupo = st.number_input("Cupo de la actividad:", min_value=1, max_value=100, value=25)
             nuevo_estado = st.selectbox("Estado:", ["Inscripto", "Asistió", "Confirmado"])
 
-        submit_button = st.form_submit_button(label="💾 Guardar Registro", key="btn_guardar_inscripcion")
+        submit_button = st.form_submit_button(label="💾 Guardar Nueva Inscripción", key="btn_guardar_inscripcion")
 
         if submit_button:
             if nuevo_nombre and nuevo_apellido and nuevo_dni:
@@ -157,12 +99,12 @@ if pagina == "📝 Registrar Inscripción":
                 df_nuevo_registro = pd.concat([df_actual, pd.DataFrame([nueva_fila])], ignore_index=True)
                 df_nuevo_registro.to_csv("datos.csv", index=False, sep=";", encoding="utf-8")
                 
-                st.success(f"🎉 ¡Registro de **{nuevo_nombre} {nuevo_apellido}** guardado con éxito!")
+                st.success(f"🎉 ¡Inscripción de **{nuevo_nombre} {nuevo_apellido}** guardada con éxito en la base de datos!")
                 st.balloons()
                 
                 st.session_state['comprobante'] = nueva_fila
             else:
-                st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI.")
+                st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI del alumno.")
 
     # Mostrar Comprobante Digital
     if 'comprobante' in st.session_state:
@@ -182,8 +124,8 @@ if pagina == "📝 Registrar Inscripción":
         
         st.markdown(f"""
         <div id="comprobante-imprimir" style="border: 2px dashed #0d6efd; padding: 25px; border-radius: 10px; background-color: #f8f9fa; color: #212529;">
-            <h3 style="margin-top: 0; color: #0d6efd; text-align: center;">🎫 Comprobante Digital - Punto Digital</h3>
-            <p style="text-align: center; font-weight: bold;">Villa Ojo de Agua</p>
+            <h3 style="margin-top: 0; color: #0d6efd; text-align: center;">🎫 Comprobante Digital de Inscripción</h3>
+            <p style="text-align: center; font-weight: bold;">Punto Digital Villa Ojo de Agua</p>
             <hr style="border: 0; border-top: 1px solid #ccc;">
             <div style="display: flex; justify-content: space-between; font-size: 14px; line-height: 1.6;">
                 <div>
@@ -193,10 +135,10 @@ if pagina == "📝 Registrar Inscripción":
                     <p><strong>Localidad:</strong> {c['localidad']}</p>
                 </div>
                 <div>
-                    <p><strong>Actividad / Trámite:</strong> {c['Nombre_Actividad']}</p>
+                    <p><strong>Actividad / Taller:</strong> {c['Nombre_Actividad']}</p>
                     <p><strong>Categoría:</strong> {c['categoria']}</p>
                     <p><strong>Estado:</strong> {c['estado']}</p>
-                    <p><strong>Institución:</strong> Punto Digital</p>
+                    <p><strong>Institución:</strong> Punto Digital Villa Ojo de Agua</p>
                 </div>
             </div>
         </div>
@@ -214,7 +156,7 @@ if pagina == "📝 Registrar Inscripción":
                 </button>
             """, height=60)
         with col_btn2:
-            if st.button("🔄 Registrar otro", key="btn_reset_comprobante"):
+            if st.button("🔄 Registrar otra inscripción", key="btn_reset_comprobante"):
                 del st.session_state['comprobante']
                 st.rerun()
 
@@ -238,7 +180,7 @@ elif pagina == "📊 Estadísticas y Datos":
     if len(df) > 0:
         col_e1, col_e2 = st.columns(2)
         with col_e1:
-            st.subheader("Registros por Actividad / Trámite")
+            st.subheader("Asistentes por Actividad")
             fig, ax = plt.subplots(figsize=(6, 4))
             sns.countplot(data=df, y='Nombre_Actividad', order=df['Nombre_Actividad'].value_counts().index, ax=ax, palette="viridis")
             st.pyplot(fig)
@@ -258,6 +200,6 @@ elif pagina == "🤖 Machine Learning":
         st.success("Modelo listo para operar con los datos actuales.")
         st.metric(label="Registros totales en el sistema", value=len(df))
         if st.button("🚀 Ejecutar Análisis Predictivo"):
-            st.info("Predicción realizada con éxito. Tendencia estimada en óptimas condiciones.")
+            st.info("Predicción realizada con éxito. Tendencia de asistencia estimada en óptimas condiciones.")
     else:
         st.warning("Se necesitan registros en la base de datos para ejecutar el modelo.") 
