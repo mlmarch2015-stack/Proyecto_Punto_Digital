@@ -77,15 +77,15 @@ LISTA_LOCALIDADES = [
     "Sol de Julio", "Bandera", "Añatuya", "Los Telares"
 ]
 
-# ================= 4. BARRA LATERAL, NAVEGACIÓN Y FILTROS =================
-if os.path.exists("PuntoDigital.jpg"):
-    st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
-elif os.path.exists("punto_digital_logo.jpg"):
+# ================= 4. BARRA LATERAL (LOGO CIRCULAR, NAVEGACIÓN Y FILTROS) =================
+# Intercambio: Logo circular en la barra lateral
+if os.path.exists("punto_digital_logo.jpg"):
     st.sidebar.image("punto_digital_logo.jpg", use_container_width=True)
+elif os.path.exists("PuntoDigital.jpg"):
+    st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
 
 st.sidebar.title("📌 Menú Principal")
 
-# Nueva opción de Inicio / Presentación como primera vista por defecto
 pagina = st.sidebar.radio("Seleccione una sección:", [
     "🏠 Inicio / Presentación",
     "📝 Registrar Inscripción",
@@ -132,17 +132,19 @@ if st.sidebar.button("🔒 Cerrar Sesión"):
     st.session_state['autenticado'] = False
     st.rerun()
 
-# ================= 5. PÁGINAS DE LA APLICACIÓN =================
+# ================= 5. PÁGINAS DE LA APLICACIÓN (BANNER PANORÁMICO) =================
 
 if pagina == "🏠 Inicio / Presentación":
-    if os.path.exists("punto_digital_logo.jpg"):
-        st.image("punto_digital_logo.jpg", width=300)
+    # Intercambio: Banner panorámico en la pantalla principal
+    if os.path.exists("PuntoDigital.jpg"):
+        st.image("PuntoDigital.jpg", use_container_width=True)
+    elif os.path.exists("punto_digital_logo.jpg"):
+        st.image("punto_digital_logo.jpg", width=250)
     
     st.title("Welcome / Panel de Control - Punto Digital")
     st.markdown("### Sistema Integral de Gestión, Inscripciones y Trámites")
     st.markdown("---")
     
-    # Métricas principales de presentación
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
         st.metric(label="Total de Registros", value=len(df))
@@ -153,7 +155,6 @@ if pagina == "🏠 Inicio / Presentación":
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Tarjetas informativas sobre las secciones
     st.subheader("📌 Guía del Sistema")
     col_g1, col_g2 = st.columns(2)
     
@@ -166,7 +167,10 @@ if pagina == "🏠 Inicio / Presentación":
         st.info("🤖 **Machine Learning**\n\nHerramienta analítica y predictiva para evaluar tendencias de asistencia y participación ciudadana.")
 
 elif pagina == "📝 Registrar Inscripción":
-    if os.path.exists("punto_digital_logo.jpg"):
+    # Intercambio: Banner panorámico en la pantalla principal
+    if os.path.exists("PuntoDigital.jpg"):
+        st.image("PuntoDigital.jpg", use_container_width=True)
+    elif os.path.exists("punto_digital_logo.jpg"):
         st.image("punto_digital_logo.jpg", width=250)
         
     st.header("📝 Registrar Nueva Inscripción / Trámite")
