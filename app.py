@@ -85,11 +85,13 @@ elif os.path.exists("punto_digital_logo.jpg"):
 
 st.sidebar.title("📌 Menú Principal")
 
+# Nueva opción de Inicio / Presentación como primera vista por defecto
 pagina = st.sidebar.radio("Seleccione una sección:", [
-    "🤖 Machine Learning",
-    "📊 Estadísticas y Datos",
+    "🏠 Inicio / Presentación",
+    "📝 Registrar Inscripción",
     "📋 Gestión y Trámites",
-    "📝 Registrar Inscripción"
+    "📊 Estadísticas y Datos",
+    "🤖 Machine Learning"
 ])
 
 st.sidebar.markdown("---")
@@ -132,7 +134,38 @@ if st.sidebar.button("🔒 Cerrar Sesión"):
 
 # ================= 5. PÁGINAS DE LA APLICACIÓN =================
 
-if pagina == "📝 Registrar Inscripción":
+if pagina == "🏠 Inicio / Presentación":
+    if os.path.exists("punto_digital_logo.jpg"):
+        st.image("punto_digital_logo.jpg", width=300)
+    
+    st.title("Welcome / Panel de Control - Punto Digital")
+    st.markdown("### Sistema Integral de Gestión, Inscripciones y Trámites")
+    st.markdown("---")
+    
+    # Métricas principales de presentación
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        st.metric(label="Total de Registros", value=len(df))
+    with col_m2:
+        st.metric(label="Localidades Conectadas", value=len(LISTA_LOCALIDADES))
+    with col_m3:
+        st.metric(label="Categorías Activas", value=len(CATEGORIAS_ESTRUCTURA))
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Tarjetas informativas sobre las secciones
+    st.subheader("📌 Guía del Sistema")
+    col_g1, col_g2 = st.columns(2)
+    
+    with col_g1:
+        st.info("📝 **Registrar Inscripción**\n\nPermite cargar nuevos ciudadanos o alumnos seleccionando su categoría, actividad, trámite y localidad, generando un comprobante digital listo para imprimir.")
+        st.info("📋 **Gestión y Trámites**\n\nVisualiza la base de datos completa con opción de aplicar filtros múltiples y descargar planillas en formato CSV.")
+        
+    with col_g2:
+        st.info("📊 **Estadísticas y Datos**\n\nGráficos dinámicos e indicadores basados en los filtros de localidades y categorías seleccionadas en la barra lateral.")
+        st.info("🤖 **Machine Learning**\n\nHerramienta analítica y predictiva para evaluar tendencias de asistencia y participación ciudadana.")
+
+elif pagina == "📝 Registrar Inscripción":
     if os.path.exists("punto_digital_logo.jpg"):
         st.image("punto_digital_logo.jpg", width=250)
         
@@ -148,14 +181,9 @@ if pagina == "📝 Registrar Inscripción":
         nueva_localidad = st.selectbox("Localidad:", options=LISTA_LOCALIDADES, key="select_localidad")
         
     with col_f2:
-        # 1. Celda Categoría
         nueva_categoria = st.selectbox("Categoría:", options=list(CATEGORIAS_ESTRUCTURA.keys()), key="select_cat")
-        
-        # 2. Celda intermedia de Actividades
         actividades_opciones = CATEGORIAS_ESTRUCTURA[nueva_categoria]["actividades"]
         nueva_actividad = st.selectbox("Actividad:", options=actividades_opciones, key="select_act")
-        
-        # 3. Celda de Trámite / Detalle
         tramites_opciones = CATEGORIAS_ESTRUCTURA[nueva_categoria]["tramites"]
         nuevo_tramite = st.selectbox("Trámite:", options=tramites_opciones, key="select_tramite")
         
@@ -193,8 +221,6 @@ if pagina == "📝 Registrar Inscripción":
             
             st.success(f"🎉 ¡Registro de **{nuevo_nombre} {nuevo_apellido}** guardado con éxito!")
             st.balloons()
-            
-            # Guardar comprobante en session state para habilitar la impresión
             st.session_state['comprobante'] = nueva_fila
         else:
             st.warning("⚠️ Por favor, completa al menos el Nombre, Apellido y DNI.")
