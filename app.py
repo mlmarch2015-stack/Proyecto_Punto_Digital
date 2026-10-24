@@ -77,10 +77,12 @@ LISTA_LOCALIDADES = [
     "Sol de Julio", "Bandera", "Añatuya", "Los Telares"
 ]
 
-# ================= 4. BARRA LATERAL (LOGO CIRCULAR, NAVEGACIÓN Y FILTROS) =================
-# Intercambio: Logo circular en la barra lateral
+# ================= 4. BARRA LATERAL (LOGO AJUSTADO, NAVEGACIÓN Y FILTROS) =================
+# Se ajusta el ancho a 140 para que no quede gigante en la barra lateral
 if os.path.exists("punto_digital_logo.jpg"):
-    st.sidebar.image("punto_digital_logo.jpg", use_container_width=True)
+    col_sb1, col_sb2, col_sb3 = st.sidebar.columns([1, 2, 1])
+    with col_sb2:
+        st.image("punto_digital_logo.jpg", width=140)
 elif os.path.exists("PuntoDigital.jpg"):
     st.sidebar.image("PuntoDigital.jpg", use_container_width=True)
 
@@ -132,10 +134,9 @@ if st.sidebar.button("🔒 Cerrar Sesión"):
     st.session_state['autenticado'] = False
     st.rerun()
 
-# ================= 5. PÁGINAS DE LA APLICACIÓN (BANNER PANORÁMICO) =================
+# ================= 5. PÁGINAS DE LA APLICACIÓN =================
 
 if pagina == "🏠 Inicio / Presentación":
-    # Intercambio: Banner panorámico en la pantalla principal
     if os.path.exists("PuntoDigital.jpg"):
         st.image("PuntoDigital.jpg", use_container_width=True)
     elif os.path.exists("punto_digital_logo.jpg"):
@@ -167,7 +168,6 @@ if pagina == "🏠 Inicio / Presentación":
         st.info("🤖 **Machine Learning**\n\nHerramienta analítica y predictiva para evaluar tendencias de asistencia y participación ciudadana.")
 
 elif pagina == "📝 Registrar Inscripción":
-    # Intercambio: Banner panorámico en la pantalla principal
     if os.path.exists("PuntoDigital.jpg"):
         st.image("PuntoDigital.jpg", use_container_width=True)
     elif os.path.exists("punto_digital_logo.jpg"):
